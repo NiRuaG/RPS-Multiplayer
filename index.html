@@ -7,6 +7,28 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>RPSLS Multiplayer</title>
     <style>
+        .locked {
+            pointer-events: none;
+        }
+        .locked .choice {
+            color: red;
+            /* background: gray; */
+        }
+        .choice.selected {
+            color: blue;
+        }
+
+        #chatElements {
+            width: 100%;
+        }
+        #chatText {
+            width: 100%;
+            resize: vertical;
+            min-height: 10rem;
+        }
+        #chatInput {
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -16,35 +38,54 @@
     </header>
     <main>
         <section>
-            <form id="input_form">
-                <input id="input_name" type="text" placeholder="User Name">
-                <input id="input_submit" type="submit" value="Join!">
-                <p id="form_alert"></p>
+            <form id="joinForm">
+                <input id="joinName" type="text" placeholder="Player Name">
+                <input id="joinSubmit" type="submit" value="Join!">
+                <p id="joinAlert"></p>
             </form>
+            <p id="joinResult"></p>
         </section>
         <section id="players">
             <div class="playerDiv">
-                Player 1
-                <span id="p1Type"></span> :
-                <span id="p1Name">not joined</span>
-                <span id="p1Choice"></span>
+                <span id="p1Name">Player 1 </span>
+                <span id="p1Type"></span>
+                <span id="p1Status">not joined</span>
             </div>
             <div class="playerDiv">
-                Player 2
-                <span id="p2Type"></span> :
-                <span id="p2Name">not joined</span>
-                <span id="p2Choice"></span>
+                <span id="p2Name">Player 2</span>
+                <span id="p2Type"></span>
+                <span id="p2Status">not joined</span>
+                <!-- <br>
+                        Wins: <span id="p2Wins">0</span> 
+                        Losses: <span id="p2Losses">0</span> -->
+            </div>
+            <div id="myStats" style="display: none">
+                <br>
+                Wins: <span id="myWins">0</span>
+                Losses: <span id="myLosses">0</span>
             </div>
             <div id="myChoices" style="display: none">
-                <button class="rock">R</button>&lt;
-                <button class="paper">P</button>&lt;
-                <button class="scissors">S</button>
+                <br>
+                <button class="choice" data-choice="rock">R</button>&lt;
+                <button class="choice" data-choice="paper">P</button>&lt;
+                <button class="choice" data-choice="scissors">S</button>
             </div>
         </section>
-        <section>Result</section>
+        <section>
+            <span id="result">Result</span>
+        </section>
     </main>
     <section>
-        Chat?
+        <!-- Lobby: -->
+    </section>
+    <section id="chatElements">
+        Chat: 
+        <form id="chatForm">
+            <textarea id="chatText" rows="12" readonly></textarea>
+            <br>
+            <input id="chatInput" type="text" placeholder="">
+            <p id="chatAlert"></p>
+        </form>
     </section>
     <script src="https://www.gstatic.com/firebasejs/5.5.4/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.5.4/firebase-database.js"></script>
