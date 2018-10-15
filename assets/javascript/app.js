@@ -12,19 +12,14 @@ $(document).ready(function() {
 
       // players : null,
 
-       p1Type : null,
        p1Name : null,
      p1Status : null,
 
-       p2Type : null,
        p2Name : null,
      p2Status : null,
      
-     myStats  : null,
-     myChoices: null,
      myWins   : null,
      myLosses : null,
-
        result : null,
 
          chat : null,
@@ -40,8 +35,9 @@ $(document).ready(function() {
   // console.log(JQ_IDs);
 
   let JQ_CLASSes = {
-    playerDiv: null,
-       choice: null,
+    myChoices: null,
+      choice : null,
+    myStats  : null,
   }
   for (let cl of Object.keys(JQ_CLASSes)) {
     JQ_CLASSes[cl] = $(`.${cl}`);
@@ -106,7 +102,6 @@ $(document).ready(function() {
   JQ_IDs.joinSubmit.click(function (event) {
   });
 
-  // User selected a RPS
   JQ_IDs.joinForm.submit(function (event) {
     event.preventDefault();
     JQ_IDs.joinAlert.empty();
@@ -159,14 +154,16 @@ $(document).ready(function() {
 
   });
 
+  // User selected a RPS
   JQ_CLASSes.choice.click(function(event) {
     // TODO: see if already locked
     console.log("Clicking a choice");
-    JQ_IDs.myChoices.addClass("locked");
+    JQ_CLASSes.myChoices.addClass("locked");
+    JQ_CLASSes.choice.hide();
     let $this = $(this);
-    $this.addClass("selected");
+    $this.show().addClass("active");
     myChoice = $this.data("choice");
-    playerMeRef.update({choice :"locked"});
+    playerMeRef.update({choice: "locked"});
   });
 
   // Add Chat
@@ -213,9 +210,9 @@ $(document).ready(function() {
     const val = oldChildSnap.val();
     console.log("players/child_removed", val);
     inAMatch = false;
-    JQ_IDs.myChoices.removeClass("locked");
-    JQ_CLASSes.choice.removeClass("selected");
-    JQ_IDs.myChoices.hide();
+    JQ_CLASSes.myChoices.removeClass("locked");
+    JQ_CLASSes.choice.removeClass("active");
+    JQ_CLASSes.myChoices.addClass("invisible");
     // if (playersRef_opp.key === val.name) {
     //   console.log("My opponent left");
     // }
@@ -297,23 +294,19 @@ $(document).ready(function() {
 
     else { // not in a match, players are joining
       if (p1Snap.exists()) {
-        JQ_IDs.p1Type.text(myPlayerID === 1 ? '(ME)' : '');
         JQ_IDs.p1Name.text(p1Snap.val().name); // val[1].name
-        JQ_IDs.p1Status.text(numPlyrJoined === 1 ? 'is waiting for a challenger' : ""); // val[1].name
+        JQ_IDs.p1Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
       }
       else {
-        JQ_IDs.p1Type.text("");
         JQ_IDs.p1Name.text("Player 1");
         JQ_IDs.p1Status.text("not joined");
       }
 
       if (p2Snap.exists()) {
-        JQ_IDs.p2Type.text(myPlayerID === 2 ? '(ME)' : '');
         JQ_IDs.p2Name.text(p2Snap.val().name);
-        JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'is waiting for a challenger' : ""); // val[1].name
+        JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
       }
       else {
-        JQ_IDs.p2Type.text("");
         JQ_IDs.p2Name.text("Player 2");
         JQ_IDs.p2Status.text("not joined");
       }
@@ -339,11 +332,14 @@ $(document).ready(function() {
   function startNewMatch() {
     console.log("STARTING A MATCH");
     inAMatch = true;
-    if (myPlayerID > 0){
-      JQ_CLASSes.playerDiv.eq(myPlayerID-1).append(JQ_IDs.myChoices, JQ_IDs.myStats);
-      JQ_IDs.myChoices.show();
-      JQ_IDs.myStats.show();
+    if (myPlayerID > 0) {
+      let oppPlayerID = (myPlayerID % 2)+1;
+      JQ_CLASSes.myChoices.eq( myPlayerID-1).removeClass("invisible");
+      JQ_CLASSes.myStats  .eq( myPlayerID-1).removeClass("invisible");
+      // JQ_CLASSes.myChoices.eq(oppPlayerID-1).hide();
+      // JQ_CLASSes.myStats  .eq(oppPlayerID-1).hide();
     }
+
     JQ_IDs.p1Status.text("..thinking..");
     JQ_IDs.p2Status.text("..thinking..");
   }

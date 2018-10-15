@@ -6,26 +6,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>RPSLS Multiplayer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU"
+        crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Candal" rel="stylesheet">
+
     <style>
+        .font-special {
+            font-family: 'Candal', sans-serif;
+        }
+    
         .locked {
             pointer-events: none;
         }
+    
         .locked .choice {
             color: red;
-            /* background: gray; */
         }
-        .choice.selected {
-            color: blue;
+ 
+    
+        .choice {
+            margin-top: 0.3rem;
         }
-
+    
+        /* #playerDiv1 .choice.active {
+            background: #007bff;
+            color: #f8f9fa
+        } */
+    
+        #p1Status,
+        #p2Status {
+            user-select: none;
+            -moz-user-select: none;
+        }
+    
+        .myChoices .fas {
+            /* color: lightblue; */
+            font-size: 2rem;
+        }
+    
         #chatElements {
             width: 100%;
         }
+    
         #chatText {
             width: 100%;
             resize: vertical;
             min-height: 10rem;
         }
+    
         #chatInput {
             width: 100%;
         }
@@ -36,52 +66,80 @@
     <header>
         RPSLS HEADER
     </header>
-    <main>
-        <section>
-            <form id="joinForm">
-                <input id="joinName" type="text" placeholder="Player Name">
-                <input id="joinSubmit" type="submit" value="Join!">
-                <p id="joinAlert"></p>
+    <main class="container">
+        <section class="row">
+            <form id="joinForm" class="col-12">
+                <div class="row justify-content-center">
+                    <input id="joinName" class="col-4" type="text" placeholder="Player Name">
+                    <input id="joinSubmit" class="btn col-auto" type="submit" value="Join!">
+                </div>
+                <div class="row">
+                    <p id="joinAlert" class="col-12"></p>
+                </div>
             </form>
             <p id="joinResult"></p>
         </section>
-        <section id="players">
-            <div class="playerDiv">
-                <span id="p1Name">Player 1 </span>
-                <span id="p1Type"></span>
-                <span id="p1Status">not joined</span>
+        <section id="players" class="row">
+            <div id="playerDiv1" class="col card text-center px-0">
+                <h3 id="p1Name" class="card-header bg-primary text-light font-special">Player 1</h3>
+                <div class="card-body bg-dark text-light">
+                    <p id="p1Status" class="card-title">not joined</p>
+                    <div class="myChoices row justify-content-around mx-1 invisible">
+                        <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="rock">
+                            <i class="fas fa-hand-rock fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="paper">
+                            <i class="fas fa-hand-paper fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="scissors">
+                            <i class="fas fa-hand-scissors fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- <i class="fas fa-hand-lizard"></i> -->
+                <!-- <i class="fas fa-hand-spock"></i> -->
+                <div class="myStats card-footer d-flex justify-content-around bg-light text-primary invisible">
+                    <div>Wins: <span id="myWins">0</span></div>
+                    <div>Losses: <span id="myLosses">0</span></div>
+                </div>
             </div>
-            <div class="playerDiv">
-                <span id="p2Name">Player 2</span>
-                <span id="p2Type"></span>
-                <span id="p2Status">not joined</span>
-                <!-- <br>
-                        Wins: <span id="p2Wins">0</span> 
-                        Losses: <span id="p2Losses">0</span> -->
+            <section class="col-3 align-self-center text-center">
+                <span id="result" class="align-self-center">Result</span>
+            </section>
+
+            <div id="playerDiv2" class="col card text-center px-0">
+                <h3 id="p2Name" class="card-header bg-danger text-light font-special">Player 2</h3>
+                <div class="card-body bg-dark text-light">
+                    <p id="p2Status" class="card-title">not joined</p>
+                    <div class="myChoices row justify-content-around mx-1 invisible">
+                        <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="rock">
+                            <i class="fas fa-hand-rock fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="paper">
+                            <i class="fas fa-hand-paper fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="scissors">
+                            <i class="fas fa-hand-scissors fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- <i class="fas fa-hand-lizard"></i> -->
+                <!-- <i class="fas fa-hand-spock"></i> -->
+                <div class="myStats card-footer d-flex justify-content-around bg-light text-danger invisible">
+                    <div>Wins: <span id="myWins">0</span></div>
+                    <div>Losses: <span id="myLosses">0</span></div>
+                </div>
             </div>
-            <div id="myStats" style="display: none">
-                <br>
-                Wins: <span id="myWins">0</span>
-                Losses: <span id="myLosses">0</span>
             </div>
-            <div id="myChoices" style="display: none">
-                <br>
-                <button class="choice" data-choice="rock">R</button>&lt;
-                <button class="choice" data-choice="paper">P</button>&lt;
-                <button class="choice" data-choice="scissors">S</button>
-            </div>
-        </section>
-        <section>
-            <span id="result">Result</span>
         </section>
     </main>
     <section>
         <!-- Lobby: -->
     </section>
-    <section id="chatElements">
-        Chat: 
+    <section id="chatElements" class="container">
+        Chat:
         <form id="chatForm">
-            <textarea id="chatText" rows="12" readonly></textarea>
+            <textarea id="chatText" rows="6" readonly></textarea>
             <br>
             <input id="chatInput" type="text" placeholder="">
             <p id="chatAlert"></p>
