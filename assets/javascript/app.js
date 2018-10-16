@@ -68,24 +68,32 @@ $(document).ready(function() {
   // #endregion Firebase Setup
   
   // #region Utility Functions
+  const enumThrows = { Rock: 0, Paper: 1, Scissors: 2, Lizard: 3, Spock: 4 };
+  
+  // 5x5 array with 0's 
+  // NB: Default 0 is to signify ties
+  let matchUps = Array(enumThrows.length).fill(Array(enumThrows.length).fill(0));  
+  
+  function setMatchUp(winThrow, beats, loseThrow) {
+    matchUps[winThrow ][loseThrow] = { winner: 1, how: beats, loser: 2 };  
+    matchUps[loseThrow][winThrow ] = { winner: 2, how: beats, loser: 1 };
+  }
+
+  // Only need to set what beats what
+  setMatchUp(enumThrows.Rock    , "crushes    ", enumThrows.Scissors); 
+  setMatchUp(enumThrows.Scissors, "cuts       ", enumThrows.Paper   ); 
+  setMatchUp(enumThrows.Paper   , "covers     ", enumThrows.Rock    ); 
+  setMatchUp(enumThrows.Rock    , "crushes    ", enumThrows.Lizard  ); 
+  setMatchUp(enumThrows.Lizard  , "poisons    ", enumThrows.Spock   ); 
+  setMatchUp(enumThrows.Spock   , "smashes    ", enumThrows.Scissors); 
+  setMatchUp(enumThrows.Scissors, "decapitates", enumThrows.Lizard  ); 
+  setMatchUp(enumThrows.Lizard  , "eats       ", enumThrows.Paper   ); 
+  setMatchUp(enumThrows.Paper   , "disproves  ", enumThrows.Spock   ); 
+  setMatchUp(enumThrows.Spock   , "vaporizes  ", enumThrows.Rock    ); 
+
   // Returns 0 for tie, otherwise 1 or 2 for winner
   let calcWinner = (p1, p2) => {
-    if (p1 === p2) {
-      return 0; // Tie
-    }
-    switch (p1) {
-      case "rock":
-        return (p2 === "paper" ? 2 : 1)
-
-      case "paper":
-        return (p2 === "scissors" ? 2 : 1)
-
-      case "scissors":
-        return (p2 === "rock" ? 2 : 1)
-
-      default:
-        return 0;
-    }
+    return matchUps[p1][p2]; // 
   }
 
   function updateMyState(mySnap) {
@@ -269,7 +277,7 @@ $(document).ready(function() {
       }
 
       if (p1Reveal && p2Reveal) {
-        let winner = calcWinner(p1Val.choice, p2Val.choice);
+        let winner = calcWinner(p1Val.choice, p2Val.choice).winner;
         switch (winner) {
           case 0:
             JQ_IDs.result.text("TIE!");
