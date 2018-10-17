@@ -1,0 +1,26 @@
+Core:
+  ✔ limit to 2 players @done
+  ☐ chat
+  validity:
+    ☐ care about duplicate names? - assign extra uid if same?
+Tests:
+  ☐ reset - connections only
+  ☐ p1 can connect
+  ☐ p2 can connect
+  ☐ third player can't connect
+  ☐ when one of two players disconnects, update display and allow new player
+Extras:
+  ☐ lizard spock
+  ☐ players online list
+  ☐ concurrent user selection 
+    ☐ timeout to decide
+  ☐ lobby room
+    ☐ option to play winner
+    ☐ bet on outcome
+      ☐ best of # style
+        ☐ other tournament styles
+  ☐ disconnect button - connected/disconn feedback
+  ☐ AI
+  ☐ inactivity kick
+  ☐ make unique games
+  ☐ 3p mode

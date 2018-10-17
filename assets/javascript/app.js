@@ -71,6 +71,13 @@ $(document).ready(function() {
   let       namesRef = db.ref("/names");
   let        chatRef = db.ref("/chat");
   let   playerOppRef = null;
+
+  const playerStatuses = {
+    waiting : "waiting for a challenger",
+    thinking: "..thinking..",
+    decided : "has decided",
+    chose: "chose",
+  }
   // #endregion Firebase Setup
   
   // #region Utility Functions
@@ -129,7 +136,7 @@ $(document).ready(function() {
       }
       else {
         if (myName) {
-          namesRef.child(myName).set(null);
+          namesRef.child(myName).set(null); // overwrite previous name
         }
         // Make a new entry in the names list
         let myNameRef = namesRef.child(name);
@@ -149,7 +156,7 @@ $(document).ready(function() {
         myPlayerID = nextPlayerID;
         playerMeRef.set({
           name: name,
-          choice: "",
+          status: playerStatuses.waiting,
           wins: 0,
           losses: 0,
         }); // TODO: on success
@@ -171,7 +178,8 @@ $(document).ready(function() {
     let $this = $(this);
     $this.show().addClass("active");
     myChoice = $this.data("choice");
-    playerMeRef.update({choice: "locked"});
+
+    playerMeRef.update({status: playerStatuses.decided});
   });
 
   // Add Chat
@@ -219,19 +227,18 @@ $(document).ready(function() {
     JQ_IDs.p1Name  .text(val.name  );
     JQ_IDs.p1Wins  .text(val.wins  );
     JQ_IDs.p1Losses.text(val.losses);
+    JQ_IDs.p1Status.text(val.status); // val[1].name
 
-    JQ_IDs.p1Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
-
-    switch (val.choice) {
-      case "locked":
-        JQ_IDs.p1Status.text("has decided");
-        break;
-      case "deciding":
-        JQ_IDs.p1Status.text("..thinking..");
-        break;
-      default:
-        JQ_IDs.p1Status.text(`chose ${val.choice}`);
-    }
+    // switch (val.choice) {
+    //   case "locked":
+    //     JQ_IDs.p1Status.text("has decided");
+    //     break;
+    //   case "deciding":
+    //     JQ_IDs.p1Status.text("..thinking..");
+    //     break;
+      // default:
+        // JQ_IDs.p1Status.text(`chose ${val.choice}`);
+    // }
   });
 
   player2Ref.on("value", function(dataSnap) {
@@ -246,26 +253,27 @@ $(document).ready(function() {
     JQ_IDs.p2Name  .text(val.name  );
     JQ_IDs.p2Wins  .text(val.wins  );
     JQ_IDs.p2Losses.text(val.losses);
+    JQ_IDs.p2Status.text(val.status);
 
-    JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
+    // JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
 
-    switch (val.choice) {
-      case "locked":
-        JQ_IDs.p2Status.text("has decided");
-        break;
-      case "deciding":
-        JQ_IDs.p2Status.text("..thinking..");
-        break;
-      default:
-        JQ_IDs.p2Status.text(`chose ${val.choice}`);
-    }
+    // switch (val.choice) {
+    //   case "locked":
+    //     JQ_IDs.p2Status.text("has decided");
+    //     break;
+    //   case "deciding":
+    //     JQ_IDs.p2Status.text("..thinking..");
+    //     break;
+    //   default:
+    //     JQ_IDs.p2Status.text(`chose ${val.choice}`);
+    // }
   });
   
-  playersRef.on("child_added", function(childSnap, prevChildKey) {
-    // ++numPlyrJoined;
-    const val = childSnap.val();
-    console.log("players/child_add", val, prevChildKey);
-  });
+  // playersRef.on("child_added", function(childSnap, prevChildKey) {
+  //   // ++numPlyrJoined;
+  //   const val = childSnap.val();
+  //   console.log("players/child_add", val, prevChildKey);
+  // });
 
   playersRef.on("child_removed", function(oldChildSnap) {
     // --numPlyrJoined;
@@ -278,6 +286,7 @@ $(document).ready(function() {
     JQ_CLASSes.choice.removeClass("active");
 
     JQ_CLASSes.myChoices.addClass("invisible");
+
     // if (playersRef_opp.key === val.name) {
     //   console.log("My opponent left");
     // }
@@ -298,40 +307,56 @@ $(document).ready(function() {
     if (inAMatch) {
       let p1Val = p1Snap.val();
       let p2Val = p2Snap.val();
-      
-      if (p1Val.choice === "locked" && p2Val.choice === "locked") {
+
+      if (p1Val.status === playerStatuses.decided && p2Val.status === playerStatuses.decided) {
         // If I'm an active player (not observer), update to reveal my choice
-        if (playerMeRef) { playerMeRef.update({choice: myChoice}) };
+        if (playerMeRef) {
+          playerMeRef.update(
+            {
+              status: `${playerStatuses.chose} ${myChoice}`,
+              choice: myChoice
+            });
+        }
       }
 
-      let p1Choice = p1Val.choice.toUpperCase();
-      let p2Choice = p2Val.choice.toUpperCase();
-      if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {        
-        let p1Throw = enumThrows[p1Choice];
-        let p2Throw = enumThrows[p2Choice];
+      if (p1Val.status.startsWith(playerStatuses.chose) && p2Val.status.startsWith(playerStatuses.chose)) {
+        console.log("HERE");
+        
+        let p1Choice = p1Val.choice.toUpperCase();
+        let p2Choice = p2Val.choice.toUpperCase();
+        if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
+          let p1Throw = enumThrows[p1Choice];
+          let p2Throw = enumThrows[p2Choice];
 
-        let winner = matchUps[p1Throw][p2Throw].winner;
+          let winner = matchUps[p1Throw][p2Throw].winner;
 
-        switch (winner) {
-          case 0:
-            JQ_IDs.result.text("TIE!");
-            break;
-          case 1:
-            JQ_IDs.result.text(`${p1Val.name} wins`);
-            break;
-          case 2:
-            JQ_IDs.result.text(`${p2Val.name} wins`);
-            break;
-        }
-
-        if (playerMeRef) { // If I'm an active player, update my stats
-          if (winner === myPlayerID) {
-            playerMeRef.update({   wins: myWins   + 1 });
-          } else if (winner) {
-            playerMeRef.update({ losses: myLosses + 1 });
+          switch (winner) {
+            case 0:
+              JQ_IDs.result.text("TIE!");
+              break;
+            case 1:
+              JQ_IDs.result.text(`${p1Val.name} wins`);
+              break;
+            case 2:
+              JQ_IDs.result.text(`${p2Val.name} wins`);
+              break;
           }
+
+          if (playerMeRef) { // If I'm an active player, update my stats
+            if (winner === myPlayerID) {
+              playerMeRef.update({ wins: myWins + 1 });
+            } else if (winner) {
+              playerMeRef.update({ losses: myLosses + 1 });
+            }
+          }
+
+          // JQ_IDs.chatText
+          //   .append(document.createTextNode(`${dataSnap.val()} \n`)); // 
+
+          setTimeout(function() {
+            startNewGame();
+          }, 3000);
         }
-        // TODO: timeout before next game
       }
     }
 
@@ -354,19 +379,36 @@ $(document).ready(function() {
   // #endregion Firebase Event Handlers
 
   // #region Game Functions
+  function startNewGame() {
+    JQ_IDs.result.empty();
+
+    JQ_CLASSes.myChoices.removeClass("locked");
+    JQ_CLASSes.choice.show();
+    JQ_CLASSes.choice.removeClass("active");
+    myChoice = "";
+
+
+    if (playerMeRef) {
+      playerMeRef.update(
+        {
+          status: playerStatuses.thinking,
+          choice: null
+        });
+    }
+  }
+
   function startNewMatch() {
     console.log("STARTING A MATCH");
     inAMatch = true;
     if (myPlayerID > 0) {
-      let oppPlayerID = (myPlayerID % 2)+1;
-      JQ_CLASSes.myChoices.eq( myPlayerID-1).removeClass("invisible");
+      // let oppPlayerID = (myPlayerID % 2) + 1;
+      // Show choices for my player # (1 or 2)
+      JQ_CLASSes.myChoices.eq(myPlayerID - 1).removeClass("invisible");
+      // Show both players' stats (Wins/Losses)
       JQ_CLASSes.pStats.removeClass("invisible");
-      // JQ_CLASSes.myChoices.eq(oppPlayerID-1).hide();
-      // JQ_CLASSes.myStats  .eq(oppPlayerID-1).hide();
     }
 
-    JQ_IDs.p1Status.text("..thinking..");
-    JQ_IDs.p2Status.text("..thinking..");
+    startNewGame();
   }
   // #endregion Game Functions
 });
