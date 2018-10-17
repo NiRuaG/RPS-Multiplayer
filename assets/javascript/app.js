@@ -12,11 +12,15 @@ $(document).ready(function() {
 
       // players : null,
 
-       p1Name : null,
+     p1Name   : null,
      p1Status : null,
+     p1Wins   : null,
+     p1Losses : null,
 
-       p2Name : null,
+     p2Name   : null,
      p2Status : null,
+     p2Wins   : null,
+     p2Losses : null,
      
      myWins   : null,
      myLosses : null,
@@ -37,7 +41,7 @@ $(document).ready(function() {
   let JQ_CLASSes = {
     myChoices: null,
       choice : null,
-    myStats  : null,
+      pStats : null,
   }
   for (let cl of Object.keys(JQ_CLASSes)) {
     JQ_CLASSes[cl] = $(`.${cl}`);
@@ -61,47 +65,42 @@ $(document).ready(function() {
   let   connectedRef = db.ref(".info/connected");
   let connectionsRef = db.ref("/connections");
   let     playersRef = db.ref("/players");
+  let     player1Ref = db.ref("/players/1");
+  let     player2Ref = db.ref("/players/2");
   let    playerMeRef = null;
   let       namesRef = db.ref("/names");
   let        chatRef = db.ref("/chat");
-  // let   playerOppRef = null;
+  let   playerOppRef = null;
   // #endregion Firebase Setup
   
   // #region Utility Functions
-  const enumThrows = { Rock: 0, Paper: 1, Scissors: 2, Lizard: 3, Spock: 4 };
+  const enumThrows = { ROCK: 0, PAPER: 1, SCISSORS: 2, LIZARD: 3, SPOCK: 4 };
   
-  // 5x5 array with 0's 
-  // NB: Default 0 is to signify ties
-  let matchUps = Array(enumThrows.length).fill(Array(enumThrows.length).fill(0));  
+  // 5x5 array with default Ties's 
+  let matchUps = Array(Object.keys(enumThrows).length);
+  for(var i=0; i< matchUps.length; i++){
+    matchUps[i] = Array(Object.keys(enumThrows).length).fill({winner: 0, how: "ties", loser: 0});
+  }
   
   function setMatchUp(winThrow, beats, loseThrow) {
     matchUps[winThrow ][loseThrow] = { winner: 1, how: beats, loser: 2 };  
     matchUps[loseThrow][winThrow ] = { winner: 2, how: beats, loser: 1 };
   }
 
-  // Only need to set what beats what
-  setMatchUp(enumThrows.Rock    , "crushes    ", enumThrows.Scissors); 
-  setMatchUp(enumThrows.Scissors, "cuts       ", enumThrows.Paper   ); 
-  setMatchUp(enumThrows.Paper   , "covers     ", enumThrows.Rock    ); 
-  setMatchUp(enumThrows.Rock    , "crushes    ", enumThrows.Lizard  ); 
-  setMatchUp(enumThrows.Lizard  , "poisons    ", enumThrows.Spock   ); 
-  setMatchUp(enumThrows.Spock   , "smashes    ", enumThrows.Scissors); 
-  setMatchUp(enumThrows.Scissors, "decapitates", enumThrows.Lizard  ); 
-  setMatchUp(enumThrows.Lizard  , "eats       ", enumThrows.Paper   ); 
-  setMatchUp(enumThrows.Paper   , "disproves  ", enumThrows.Spock   ); 
-  setMatchUp(enumThrows.Spock   , "vaporizes  ", enumThrows.Rock    ); 
-
-  // Returns 0 for tie, otherwise 1 or 2 for winner
-  let calcWinner = (p1, p2) => {
-    return matchUps[p1][p2]; // 
-  }
+  // Only need to set what beats what, helper function above makes sure the opposite matchup is accounted for
+  setMatchUp(enumThrows.ROCK    , "crushes"    , enumThrows.SCISSORS);
+  setMatchUp(enumThrows.SCISSORS, "cuts"       , enumThrows.PAPER   );
+  setMatchUp(enumThrows.PAPER   , "covers"     , enumThrows.ROCK    );
+  setMatchUp(enumThrows.ROCK    , "crushes"    , enumThrows.LIZARD  );
+  setMatchUp(enumThrows.LIZARD  , "poisons"    , enumThrows.SPOCK   );
+  setMatchUp(enumThrows.SPOCK   , "smashes"    , enumThrows.SCISSORS);
+  setMatchUp(enumThrows.SCISSORS, "decapitates", enumThrows.LIZARD  );
+  setMatchUp(enumThrows.LIZARD  , "eats"       , enumThrows.PAPER   );
+  setMatchUp(enumThrows.PAPER   , "disproves"  , enumThrows.SPOCK   );
+  setMatchUp(enumThrows.SPOCK   , "vaporizes"  , enumThrows.ROCK    );
 
   function updateMyState(mySnap) {
-    const val = mySnap.val()
-    console.log("updating my state", val);
-    if (!val) { return; }
-    JQ_IDs.myWins  .text(val.wins  );
-    JQ_IDs.myLosses.text(val.losses);
+    
   }
   // #endregion Utility Functions
 
@@ -150,11 +149,12 @@ $(document).ready(function() {
         myPlayerID = nextPlayerID;
         playerMeRef.set({
           name: name,
-          choice: "deciding",
+          choice: "",
           wins: 0,
           losses: 0,
         }); // TODO: on success
-        playerMeRef.on("value", updateMyState);
+
+        // playerMeRef.on("value", updateMyState);
   
         return false;
       }
@@ -206,7 +206,61 @@ $(document).ready(function() {
       con.set(true);
     }
   });
-    
+
+  player1Ref.on("value", function (dataSnap) {
+    const val = dataSnap.val();
+    console.log("player1/value", val);
+    if (!val) {
+      JQ_IDs.p1Name  .text("Player 1"  );
+      JQ_IDs.p1Status.text("not joined");
+      return;
+    }
+
+    JQ_IDs.p1Name  .text(val.name  );
+    JQ_IDs.p1Wins  .text(val.wins  );
+    JQ_IDs.p1Losses.text(val.losses);
+
+    JQ_IDs.p1Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
+
+    switch (val.choice) {
+      case "locked":
+        JQ_IDs.p1Status.text("has decided");
+        break;
+      case "deciding":
+        JQ_IDs.p1Status.text("..thinking..");
+        break;
+      default:
+        JQ_IDs.p1Status.text(`chose ${val.choice}`);
+    }
+  });
+
+  player2Ref.on("value", function(dataSnap) {
+    const val = dataSnap.val();
+    console.log("player2/value", val);
+    if (!val) {
+      JQ_IDs.p2Name  .text("Player 2"  );
+      JQ_IDs.p2Status.text("not joined");
+      return;
+    }
+
+    JQ_IDs.p2Name  .text(val.name  );
+    JQ_IDs.p2Wins  .text(val.wins  );
+    JQ_IDs.p2Losses.text(val.losses);
+
+    JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
+
+    switch (val.choice) {
+      case "locked":
+        JQ_IDs.p2Status.text("has decided");
+        break;
+      case "deciding":
+        JQ_IDs.p2Status.text("..thinking..");
+        break;
+      default:
+        JQ_IDs.p2Status.text(`chose ${val.choice}`);
+    }
+  });
+  
   playersRef.on("child_added", function(childSnap, prevChildKey) {
     // ++numPlyrJoined;
     const val = childSnap.val();
@@ -218,8 +272,11 @@ $(document).ready(function() {
     const val = oldChildSnap.val();
     console.log("players/child_removed", val);
     inAMatch = false;
+
     JQ_CLASSes.myChoices.removeClass("locked");
+    JQ_CLASSes.choice.show();
     JQ_CLASSes.choice.removeClass("active");
+
     JQ_CLASSes.myChoices.addClass("invisible");
     // if (playersRef_opp.key === val.name) {
     //   console.log("My opponent left");
@@ -241,43 +298,20 @@ $(document).ready(function() {
     if (inAMatch) {
       let p1Val = p1Snap.val();
       let p2Val = p2Snap.val();
-      let p1Lock = false;
-      let p2Lock = false;
-      let p1Reveal = false;
-      let p2Reveal = false;
-      switch (p1Val.choice) {
-        case "locked":
-          p1Lock = true;
-          JQ_IDs.p1Status.text("has decided");
-          break;
-        case "deciding":
-          JQ_IDs.p1Status.text("..thinking..");
-          break;
-        default:
-          p1Reveal = true;
-          JQ_IDs.p1Status.text(`chose ${p1Val.choice}`);
-      }
-      switch (p2Val.choice) {
-        case "locked":
-          p2Lock = true;
-          JQ_IDs.p2Status.text("has decided");
-          break;
-        case "deciding":
-          JQ_IDs.p2Status.text("..thinking..");
-          break;
-        default:
-          p2Reveal = true
-          JQ_IDs.p2Status.text(`chose ${p2Val.choice}`);
-      }
-      if (p1Lock && p2Lock) {
-        // console.log("Both players locked in!");
-        // Both players choice are locked in
+      
+      if (p1Val.choice === "locked" && p2Val.choice === "locked") {
         // If I'm an active player (not observer), update to reveal my choice
         if (playerMeRef) { playerMeRef.update({choice: myChoice}) };
       }
 
-      if (p1Reveal && p2Reveal) {
-        let winner = calcWinner(p1Val.choice, p2Val.choice).winner;
+      let p1Choice = p1Val.choice.toUpperCase();
+      let p2Choice = p2Val.choice.toUpperCase();
+      if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {        
+        let p1Throw = enumThrows[p1Choice];
+        let p2Throw = enumThrows[p2Choice];
+
+        let winner = matchUps[p1Throw][p2Throw].winner;
+
         switch (winner) {
           case 0:
             JQ_IDs.result.text("TIE!");
@@ -289,9 +323,10 @@ $(document).ready(function() {
             JQ_IDs.result.text(`${p2Val.name} wins`);
             break;
         }
+
         if (playerMeRef) { // If I'm an active player, update my stats
           if (winner === myPlayerID) {
-            playerMeRef.update({ wins: myWins + 1 });
+            playerMeRef.update({   wins: myWins   + 1 });
           } else if (winner) {
             playerMeRef.update({ losses: myLosses + 1 });
           }
@@ -301,24 +336,6 @@ $(document).ready(function() {
     }
 
     else { // not in a match, players are joining
-      if (p1Snap.exists()) {
-        JQ_IDs.p1Name.text(p1Snap.val().name); // val[1].name
-        JQ_IDs.p1Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
-      }
-      else {
-        JQ_IDs.p1Name.text("Player 1");
-        JQ_IDs.p1Status.text("not joined");
-      }
-
-      if (p2Snap.exists()) {
-        JQ_IDs.p2Name.text(p2Snap.val().name);
-        JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
-      }
-      else {
-        JQ_IDs.p2Name.text("Player 2");
-        JQ_IDs.p2Status.text("not joined");
-      }
-
       if (numPlyrJoined === 2) {
         startNewMatch();
       }
@@ -343,7 +360,7 @@ $(document).ready(function() {
     if (myPlayerID > 0) {
       let oppPlayerID = (myPlayerID % 2)+1;
       JQ_CLASSes.myChoices.eq( myPlayerID-1).removeClass("invisible");
-      JQ_CLASSes.myStats  .eq( myPlayerID-1).removeClass("invisible");
+      JQ_CLASSes.pStats.removeClass("invisible");
       // JQ_CLASSes.myChoices.eq(oppPlayerID-1).hide();
       // JQ_CLASSes.myStats  .eq(oppPlayerID-1).hide();
     }

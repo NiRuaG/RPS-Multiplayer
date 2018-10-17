@@ -59,12 +59,31 @@
         #chatInput {
             width: 100%;
         }
+
+        .jumbotron img {
+            max-height: 25vh;
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        RPSLS HEADER
+    <header class="jumbotron rounded-0 p-4 bg-dark text-success">
+        <div class="container">
+            <div class="row">
+                <img class="col-auto" src="assets/images/t-shirt-pierre-papier.jpg" alt="Rock-Paper-Scissors-Lizard-Spock diagram">
+                <h1 class="col display-4 font-special align-self-center">Multi-Player RPSLS</h1>
+            </div>
+            <div class="row">
+                <p class="lead col-auto font-weight-bold">Heads-Up play of Rock-Paper-Scissors-Lizard-Spock</p>
+                <div class="col">
+                    <i class="fas fa-hand-rock fa-2x"></i>
+                    <i class="fas fa-hand-paper fa-2x"></i>
+                    <i class="fas fa-hand-scissors fa-2x"></i>
+                    <i class="fas fa-hand-lizard fa-2x"></i>
+                    <i class="fas fa-hand-spock fa-2x"></i>
+                </div>
+            </div>
+        </div>
     </header>
     <main class="container">
         <section class="row">
@@ -80,7 +99,7 @@
             <p id="joinResult"></p>
         </section>
         <section id="players" class="row">
-            <div id="playerDiv1" class="col card text-center px-0">
+            <div id="p1Div" class="col card text-center px-0">
                 <h3 id="p1Name" class="card-header bg-primary text-light font-special">Player 1</h3>
                 <div class="card-body bg-dark text-light">
                     <p id="p1Status" class="card-title">not joined</p>
@@ -94,20 +113,24 @@
                         <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="scissors">
                             <i class="fas fa-hand-scissors fa-lg"></i>
                         </button>
+                        <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="lizard">
+                            <i class="fas fa-hand-lizard fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-primary bg-dark text-primary" data-choice="spock">
+                            <i class="fas fa-hand-spock fa-lg"></i>
+                        </button>
                     </div>
                 </div>
-                <!-- <i class="fas fa-hand-lizard"></i> -->
-                <!-- <i class="fas fa-hand-spock"></i> -->
-                <div class="myStats card-footer d-flex justify-content-around bg-light text-primary invisible">
-                    <div>Wins: <span id="myWins">0</span></div>
-                    <div>Losses: <span id="myLosses">0</span></div>
+                <div class="pStats card-footer d-flex justify-content-around bg-light text-primary invisible">
+                    <div>Wins: <span id="p1Wins">0</span></div>
+                    <div>Losses: <span id="p1Losses">0</span></div>
                 </div>
             </div>
             <section class="col-3 align-self-center text-center">
                 <span id="result" class="align-self-center">Result</span>
             </section>
 
-            <div id="playerDiv2" class="col card text-center px-0">
+            <div id="p2Div" class="col card text-center px-0">
                 <h3 id="p2Name" class="card-header bg-danger text-light font-special">Player 2</h3>
                 <div class="card-body bg-dark text-light">
                     <p id="p2Status" class="card-title">not joined</p>
@@ -121,13 +144,17 @@
                         <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="scissors">
                             <i class="fas fa-hand-scissors fa-lg"></i>
                         </button>
+                        <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="lizard">
+                            <i class="fas fa-hand-lizard fa-lg"></i>
+                        </button>
+                        <button class="choice col-auto btn btn-outline-danger bg-dark text-danger" data-choice="spock">
+                            <i class="fas fa-hand-spock fa-lg"></i>
+                        </button>
                     </div>
                 </div>
-                <!-- <i class="fas fa-hand-lizard"></i> -->
-                <!-- <i class="fas fa-hand-spock"></i> -->
-                <div class="myStats card-footer d-flex justify-content-around bg-light text-danger invisible">
-                    <div>Wins: <span id="myWins">0</span></div>
-                    <div>Losses: <span id="myLosses">0</span></div>
+                <div class="pStats card-footer d-flex justify-content-around bg-light text-danger invisible">
+                    <div>Wins: <span id="p2Wins">0</span></div>
+                    <div>Losses: <span id="p2Losses">0</span></div>
                 </div>
             </div>
             </div>
