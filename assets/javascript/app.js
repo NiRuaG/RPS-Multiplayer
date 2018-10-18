@@ -70,7 +70,7 @@ $(document).ready(function() {
   let    playerMeRef = null;
   let       namesRef = db.ref("/names");
   let        chatRef = db.ref("/chat");
-  let   playerOppRef = null;
+  // let   playerOppRef = null;
 
   const playerStatuses = {
     waiting : "waiting for a challenger",
@@ -106,9 +106,6 @@ $(document).ready(function() {
   setMatchUp(enumThrows.PAPER   , "disproves"  , enumThrows.SPOCK   );
   setMatchUp(enumThrows.SPOCK   , "vaporizes"  , enumThrows.ROCK    );
 
-  function updateMyState(mySnap) {
-    
-  }
   // #endregion Utility Functions
 
   // #region Click & Submit Functions
@@ -221,13 +218,14 @@ $(document).ready(function() {
     if (!val) {
       JQ_IDs.p1Name  .text("Player 1"  );
       JQ_IDs.p1Status.text("not joined");
+      // JQ_IDs.p2Status.text(playerStatuses.waiting)
       return;
     }
 
     JQ_IDs.p1Name  .text(val.name  );
     JQ_IDs.p1Wins  .text(val.wins  );
     JQ_IDs.p1Losses.text(val.losses);
-    JQ_IDs.p1Status.text(val.status); // val[1].name
+    JQ_IDs.p1Status.text(val.status);
 
     // switch (val.choice) {
     //   case "locked":
@@ -247,6 +245,7 @@ $(document).ready(function() {
     if (!val) {
       JQ_IDs.p2Name  .text("Player 2"  );
       JQ_IDs.p2Status.text("not joined");
+      // JQ_IDs.p1Status.text(playerStatuses.waiting);
       return;
     }
 
@@ -286,6 +285,13 @@ $(document).ready(function() {
     JQ_CLASSes.choice.removeClass("active");
 
     JQ_CLASSes.myChoices.addClass("invisible");
+
+    player1Ref.once(function() {
+      // TODO: update the remaining player's status to 'waiting'
+    });
+    player2Ref.once(function() {    
+      // TODO: update the remaining player's status to 'waiting'
+    });
 
     // if (playersRef_opp.key === val.name) {
     //   console.log("My opponent left");
@@ -361,6 +367,7 @@ $(document).ready(function() {
     }
 
     else { // not in a match, players are joining
+      
       if (numPlyrJoined === 2) {
         startNewMatch();
       }
