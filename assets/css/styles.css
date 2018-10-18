@@ -1,0 +1,43 @@
+.font-special {
+  font-family: "Candal", sans-serif;
+}
+
+.locked {
+  pointer-events: none;
+}
+
+.locked .choice {
+  color: red;
+}
+
+.choice {
+  margin-top: 0.3rem;
+}
+
+#p1Status,
+#p2Status {
+  user-select: none;
+  -moz-user-select: none;
+}
+
+.myChoices .fas {
+  font-size: 2rem;
+}
+
+#chatElements {
+  width: 100%;
+}
+
+#chatText {
+  width: 100%;
+  resize: vertical;
+  min-height: 10rem;
+}
+
+#chatInput {
+  width: 100%;
+}
+
+.jumbotron img {
+  max-height: 25vh;
+}

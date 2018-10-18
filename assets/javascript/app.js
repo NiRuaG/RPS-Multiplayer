@@ -1,5 +1,3 @@
-// let myPlayerID = 1;
-
 $(document).ready(function() {
   console.log("READY");
   
@@ -9,8 +7,6 @@ $(document).ready(function() {
     joinSubmit : null,
     joinAlert  : null,
     joinResult : null,
-
-      // players : null,
 
      p1Name   : null,
      p1Status : null,
@@ -22,12 +18,9 @@ $(document).ready(function() {
      p2Wins   : null,
      p2Losses : null,
      
-     myWins   : null,
-     myLosses : null,
        result : null,
 
-         chat : null,
-
+    chat      : null,
     chatForm  : null,
     chatText  : null,
     chatInput : null,
@@ -48,42 +41,42 @@ $(document).ready(function() {
   }
   // console.log(JQ_CLASSes);  
 
-  let nextPlayerID = 0; // ID of next player to join (1 or 2)
+  const playerStatuses = {
+     waiting : "waiting for a challenger",
+    thinking : "..thinking..",
+     decided : "has decided",
+       chose : "chose",
+  }
+  
+  let nextPlayerID  = 0; // ID of next player to join (1 or 2)
   let numPlyrJoined = 0;
   let inAMatch = false;
 
-  let myName = "";
+  let myName     = "";
   let myPlayerID = 0 ;
   let myChoice   = "";
-  let myWins = 0;
-  let myLosses = 0;
+  let myWins     = 0 ;
+  let myLosses   = 0 ;
   
   // #region Firebase Setup  
-  let db = loadPersonalFirebase();
-  // let db = {};
+  let db = loadFirebase();
   
   let   connectedRef = db.ref(".info/connected");
   let connectionsRef = db.ref("/connections");
+  let       namesRef = db.ref("/names");
+  let        chatRef = db.ref("/chat");
   let     playersRef = db.ref("/players");
   let     player1Ref = db.ref("/players/1");
   let     player2Ref = db.ref("/players/2");
   let    playerMeRef = null;
-  let       namesRef = db.ref("/names");
-  let        chatRef = db.ref("/chat");
   // let   playerOppRef = null;
-
-  const playerStatuses = {
-    waiting : "waiting for a challenger",
-    thinking: "..thinking..",
-    decided : "has decided",
-    chose: "chose",
-  }
   // #endregion Firebase Setup
   
+ 
   // #region Utility Functions
   const enumThrows = { ROCK: 0, PAPER: 1, SCISSORS: 2, LIZARD: 3, SPOCK: 4 };
   
-  // 5x5 array with default Ties's 
+  // 5x5 array with default Ties's
   let matchUps = Array(Object.keys(enumThrows).length);
   for(var i=0; i< matchUps.length; i++){
     matchUps[i] = Array(Object.keys(enumThrows).length).fill({winner: 0, how: "ties", loser: 0});
@@ -105,12 +98,13 @@ $(document).ready(function() {
   setMatchUp(enumThrows.LIZARD  , "eats"       , enumThrows.PAPER   );
   setMatchUp(enumThrows.PAPER   , "disproves"  , enumThrows.SPOCK   );
   setMatchUp(enumThrows.SPOCK   , "vaporizes"  , enumThrows.ROCK    );
-
   // #endregion Utility Functions
 
   // #region Click & Submit Functions
+
   // User Entered Name to Connect to Game
   JQ_IDs.joinSubmit.click(function (event) {
+    JQ_IDs.joinForm.submit();
   });
 
   JQ_IDs.joinForm.submit(function (event) {
@@ -126,8 +120,9 @@ $(document).ready(function() {
     }
 
     JQ_IDs.joinName.val(""); // empty-out input field
-    // Check for duplicate name
+
     namesRef.once("value", function (dataSnap) {
+      // Check for duplicate name
       if (dataSnap.hasChild(name)) {
         JQ_IDs.joinAlert.append(`Player with name ${name} has already joined.`);
       }
@@ -135,6 +130,7 @@ $(document).ready(function() {
         if (myName) {
           namesRef.child(myName).set(null); // overwrite previous name
         }
+
         // Make a new entry in the names list
         let myNameRef = namesRef.child(name);
         myNameRef.set(true)
@@ -156,17 +152,14 @@ $(document).ready(function() {
           status: playerStatuses.waiting,
           wins: 0,
           losses: 0,
-        }); // TODO: on success
+        }); 
 
-        // playerMeRef.on("value", updateMyState);
-  
         return false;
       }
     });
-
   });
 
-  // User selected a RPS
+  // User selected a RPSLS
   JQ_CLASSes.choice.click(function(event) {
     // TODO: see if already locked
     console.log("Clicking a choice");
@@ -179,13 +172,13 @@ $(document).ready(function() {
     playerMeRef.update({status: playerStatuses.decided});
   });
 
-  // Add Chat
+  // Add Chat Message
   JQ_IDs.chatForm.submit(function(event) {
-    JQ_IDs.chatAlert.empty();
     event.preventDefault();
+    JQ_IDs.chatAlert.empty();
     if (!myName) {
       JQ_IDs.chatAlert.append("Please join above with a name first");
-      return;
+      return false;
     }
 
     let text = JQ_IDs.chatInput.val().trim();
@@ -203,7 +196,7 @@ $(document).ready(function() {
   // #region Firebase Event Handlers
   connectedRef.on("value", function(dataSnap) {
     const val = dataSnap.val();
-    console.log("connected/value", val);
+    // console.log("connected/value", val);
     
     if (val) {
       let con = connectionsRef.push();
@@ -214,7 +207,7 @@ $(document).ready(function() {
 
   player1Ref.on("value", function (dataSnap) {
     const val = dataSnap.val();
-    console.log("player1/value", val);
+    // console.log("player1/value", val);
     if (!val) {
       JQ_IDs.p1Name  .text("Player 1"  );
       JQ_IDs.p1Status.text("not joined");
@@ -226,22 +219,11 @@ $(document).ready(function() {
     JQ_IDs.p1Wins  .text(val.wins  );
     JQ_IDs.p1Losses.text(val.losses);
     JQ_IDs.p1Status.text(val.status);
-
-    // switch (val.choice) {
-    //   case "locked":
-    //     JQ_IDs.p1Status.text("has decided");
-    //     break;
-    //   case "deciding":
-    //     JQ_IDs.p1Status.text("..thinking..");
-    //     break;
-      // default:
-        // JQ_IDs.p1Status.text(`chose ${val.choice}`);
-    // }
   });
 
   player2Ref.on("value", function(dataSnap) {
     const val = dataSnap.val();
-    console.log("player2/value", val);
+    // console.log("player2/value", val);
     if (!val) {
       JQ_IDs.p2Name  .text("Player 2"  );
       JQ_IDs.p2Status.text("not joined");
@@ -253,19 +235,6 @@ $(document).ready(function() {
     JQ_IDs.p2Wins  .text(val.wins  );
     JQ_IDs.p2Losses.text(val.losses);
     JQ_IDs.p2Status.text(val.status);
-
-    // JQ_IDs.p2Status.text(numPlyrJoined === 1 ? 'waiting for a challenger' : ""); // val[1].name
-
-    // switch (val.choice) {
-    //   case "locked":
-    //     JQ_IDs.p2Status.text("has decided");
-    //     break;
-    //   case "deciding":
-    //     JQ_IDs.p2Status.text("..thinking..");
-    //     break;
-    //   default:
-    //     JQ_IDs.p2Status.text(`chose ${val.choice}`);
-    // }
   });
   
   // playersRef.on("child_added", function(childSnap, prevChildKey) {
@@ -275,24 +244,27 @@ $(document).ready(function() {
   // });
 
   playersRef.on("child_removed", function(oldChildSnap) {
+    // When a player disconnects in the middle of a game, do some resets
+
     // --numPlyrJoined;
-    const val = oldChildSnap.val();
-    console.log("players/child_removed", val);
+    // const val = oldChildSnap.val();
+    // console.log("players/child_removed", val);
+
     inAMatch = false;
 
-    JQ_CLASSes.myChoices.removeClass("locked");
-    JQ_CLASSes.choice.show();
-    JQ_CLASSes.choice.removeClass("active");
+    JQ_CLASSes.myChoices.removeClass("locked").addClass("invisible");
+    JQ_CLASSes.choice.show().removeClass("active");
 
-    JQ_CLASSes.myChoices.addClass("invisible");
-
-    player1Ref.once(function() {
-      // TODO: update the remaining player's status to 'waiting'
+    player1Ref.once("value", function(dataSnap) {
+      if (dataSnap.val()){
+        player1Ref.update( {status: playerStatuses.waiting} );
+      }
     });
-    player2Ref.once(function() {    
-      // TODO: update the remaining player's status to 'waiting'
+    player2Ref.once("value", function(dataSnap) {
+      if (dataSnap.val()){
+        player2Ref.update( {status: playerStatuses.waiting} );
+      }
     });
-
     // if (playersRef_opp.key === val.name) {
     //   console.log("My opponent left");
     // }
@@ -301,7 +273,7 @@ $(document).ready(function() {
   playersRef.on("value", function (dataSnap) {
     numPlyrJoined = dataSnap.numChildren();
     const val = dataSnap.val();
-    console.log("players/value", val || null);
+    // console.log("players/value", val || null);
     
     let p1Snap = dataSnap.child(1);
     let p2Snap = dataSnap.child(2);
@@ -314,8 +286,9 @@ $(document).ready(function() {
       let p1Val = p1Snap.val();
       let p2Val = p2Snap.val();
 
+      // Check if both players have decided their choice
       if (p1Val.status === playerStatuses.decided && p2Val.status === playerStatuses.decided) {
-        // If I'm an active player (not observer), update to reveal my choice
+        // If I'm an active player (not observer), update to "reveal" my choice
         if (playerMeRef) {
           playerMeRef.update(
             {
@@ -325,26 +298,38 @@ $(document).ready(function() {
         }
       }
 
+      // Check if both players have revealed their choice
       if (p1Val.status.startsWith(playerStatuses.chose) && p2Val.status.startsWith(playerStatuses.chose)) {
-        console.log("HERE");
-        
+        // See who's choice was the winner
         let p1Choice = p1Val.choice.toUpperCase();
         let p2Choice = p2Val.choice.toUpperCase();
         if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
+          let winThrow = null;
+          let how = "";
+          let loseThrow = null;
+
           let p1Throw = enumThrows[p1Choice];
           let p2Throw = enumThrows[p2Choice];
 
-          let winner = matchUps[p1Throw][p2Throw].winner;
+          const matchup = matchUps[p1Throw][p2Throw];
+          const winner = matchup.winner;
+          // how = matchup.how;
 
           switch (winner) {
             case 0:
               JQ_IDs.result.text("TIE!");
+              winThrow = p1Choice;
+              loseThrow = p2Choice;
               break;
             case 1:
               JQ_IDs.result.text(`${p1Val.name} wins`);
+              winThrow = p1Choice;
+              loseThrow = p2Choice;
               break;
             case 2:
               JQ_IDs.result.text(`${p2Val.name} wins`);
+              winThrow = p2Choice;
+              loseThrow = p1Choice;
               break;
           }
 
@@ -354,20 +339,18 @@ $(document).ready(function() {
             } else if (winner) {
               playerMeRef.update({ losses: myLosses + 1 });
             }
+
+            // TODO: figure out how to avoid this showing up 3x times
+            // JQ_IDs.chatText
+            // .prepend(`${winThrow} ${how} ${loseThrow} \n`);}
           }
-
-          // JQ_IDs.chatText
-          //   .append(document.createTextNode(`${dataSnap.val()} \n`)); // 
-
-          setTimeout(function() {
-            startNewGame();
-          }, 3000);
         }
+        // Timeout to next game
+        setTimeout(startNewGame, 1000 * 3); // 3 seconds
       }
     }
 
     else { // not in a match, players are joining
-      
       if (numPlyrJoined === 2) {
         startNewMatch();
       }
@@ -381,7 +364,7 @@ $(document).ready(function() {
 
   chatRef.on("value", function(dataSnap) {
     JQ_IDs.chatText
-      .append(document.createTextNode(`${dataSnap.val()} \n`)); // createTextNode to escape sneaky html sequences "<tag>"
+      .prepend(document.createTextNode(`${dataSnap.val()} \n`)); // createTextNode to escape sneaky html sequences "<tag>"
   });
   // #endregion Firebase Event Handlers
 
