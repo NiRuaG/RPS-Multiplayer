@@ -8,11 +8,13 @@ $(document).ready(function() {
     joinAlert  : null,
     joinResult : null,
 
+     p1Div    : null,
      p1Name   : null,
      p1Status : null,
      p1Wins   : null,
      p1Losses : null,
 
+     p2Div    : null,
      p2Name   : null,
      p2Status : null,
      p2Wins   : null,
@@ -34,7 +36,7 @@ $(document).ready(function() {
   let JQ_CLASSes = {
     myChoices: null,
       choice : null,
-      pStats : null,
+      // pStats : null,
   }
   for (let cl of Object.keys(JQ_CLASSes)) {
     JQ_CLASSes[cl] = $(`.${cl}`);
@@ -46,6 +48,9 @@ $(document).ready(function() {
     thinking : "..thinking..",
      decided : "has decided",
        chose : "chose",
+        //  won : "is gloating",
+        // loss : "is defeated",
+        // tied : ""
   }
   
   let nextPlayerID  = 0; // ID of next player to join (1 or 2)
@@ -164,9 +169,9 @@ $(document).ready(function() {
     // TODO: see if already locked
     console.log("Clicking a choice");
     JQ_CLASSes.myChoices.addClass("locked");
-    JQ_CLASSes.choice.hide();
+    JQ_CLASSes.choice.addClass("invisible");
     let $this = $(this);
-    $this.show().addClass("active");
+    $this.removeClass("invisible").addClass("active");
     myChoice = $this.data("choice");
 
     playerMeRef.update({status: playerStatuses.decided});
@@ -211,6 +216,8 @@ $(document).ready(function() {
     if (!val) {
       JQ_IDs.p1Name  .text("Player 1"  );
       JQ_IDs.p1Status.text("not joined");
+      JQ_IDs.p1Wins  .text(0);
+      JQ_IDs.p1Losses.text(0);
       // JQ_IDs.p2Status.text(playerStatuses.waiting)
       return;
     }
@@ -219,6 +226,70 @@ $(document).ready(function() {
     JQ_IDs.p1Wins  .text(val.wins  );
     JQ_IDs.p1Losses.text(val.losses);
     JQ_IDs.p1Status.text(val.status);
+
+    if (dataSnap.child("choice").exists()) {
+      let choice = val.choice.toLowerCase();
+      console.log("choice", choice);
+      // let find = JQ_CLASSes.myChoices.eq(0).find(`[data-choice="${choice}"`);
+      let find = "";
+      console.log("cmon..", find);
+    }
+
+    //   if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
+    //     console.log("HERE after has property");
+    //     let p1Throw = enumThrows[p1Choice];
+    //     let p2Throw = enumThrows[p2Choice];
+
+    //     const matchup = matchUps[p1Throw][p2Throw];
+    //     const winner = matchup.winner;
+    //     let winThrow = null;
+    //     let loseThrow = null;
+    //     let winnerName = null;
+
+    //     switch (winner) {
+    //       case 0:
+    //         JQ_IDs.result.text("TIE!");
+    //         winThrow = p1Choice;
+    //         loseThrow = p2Choice;
+    //         winnerName = "";
+    //         break;
+    //       case 1:
+    //         winThrow = p1Choice;
+    //         loseThrow = p2Choice;
+    //         winnerName = p1Val.name;
+    //         break;
+    //       case 2:
+    //         winThrow = p2Choice;
+    //         loseThrow = p1Choice;
+    //         winnerName = p2Val.name;
+    //         break;
+    //     }
+
+    //     JQ_IDs.result.text(winnerName ? `${winnerName} WINS!` : `TIE!`);
+
+    //     JQ_IDs.chatText
+    //       .prepend(`${winThrow} ${matchup.how} ${loseThrow}\n`);
+
+    //     console.log("HERE before timeout");
+    //     setTimeout(function () {
+    //       console.log("HERE in timeout")
+    //       if (playerMeRef) { // If I'm an active player, update my stats
+    //         if (winner === myPlayerID) {
+    //           ++myWins;
+    //           playerMeRef.update({ wins: myWins, status: playerStatuses.won }); // it's important to set status to something so that it will not fall back into this loop
+    //         } else if (winner) { // there was a winner (not a tie), but it wasn't me = loss
+    //           ++myLosses;
+    //           playerMeRef.update({ losses: myLosses, status: playerStatuses.loss });
+    //         }
+    //         startNewGame();
+    //       }
+    //     }, 1000 * 3); // 3 seconds
+    //     console.log("HERE after timeout")
+    //   }
+    //   else {// Some player had an invalid choice, try a new game
+    //     // setTimeout(startNewGame, 1000 * 2);
+    //   }
+
   });
 
   player2Ref.on("value", function(dataSnap) {
@@ -227,6 +298,8 @@ $(document).ready(function() {
     if (!val) {
       JQ_IDs.p2Name  .text("Player 2"  );
       JQ_IDs.p2Status.text("not joined");
+      JQ_IDs.p2Wins  .text(0);
+      JQ_IDs.p2Losses.text(0);
       // JQ_IDs.p1Status.text(playerStatuses.waiting);
       return;
     }
@@ -253,7 +326,7 @@ $(document).ready(function() {
     inAMatch = false;
 
     JQ_CLASSes.myChoices.removeClass("locked").addClass("invisible");
-    JQ_CLASSes.choice.show().removeClass("active");
+    JQ_CLASSes.choice.removeClass("invisible").removeClass("active");
 
     player1Ref.once("value", function(dataSnap) {
       if (dataSnap.val()){
@@ -299,57 +372,66 @@ $(document).ready(function() {
       }
 
       // Check if both players have revealed their choice
-      if (p1Val.status.startsWith(playerStatuses.chose) && p2Val.status.startsWith(playerStatuses.chose)) {
+      if (p1Snap.child("choice").exists() && p2Snap.child("choice").exists()) {
         // See who's choice was the winner
         let p1Choice = p1Val.choice.toUpperCase();
         let p2Choice = p2Val.choice.toUpperCase();
-        if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
-          let winThrow = null;
-          let how = "";
-          let loseThrow = null;
 
+        if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
           let p1Throw = enumThrows[p1Choice];
           let p2Throw = enumThrows[p2Choice];
 
           const matchup = matchUps[p1Throw][p2Throw];
           const winner = matchup.winner;
-          // how = matchup.how;
+          
+          let winThrow = null;
+          let loseThrow = null;
+          let winnerName = null;
 
           switch (winner) {
             case 0:
-              JQ_IDs.result.text("TIE!");
-              winThrow = p1Choice;
+              winThrow  = p1Choice; // set these variables to still show a TIEd result
               loseThrow = p2Choice;
+              winnerName = "";
               break;
             case 1:
-              JQ_IDs.result.text(`${p1Val.name} wins`);
               winThrow = p1Choice;
               loseThrow = p2Choice;
+              winnerName = p1Val.name;
               break;
             case 2:
-              JQ_IDs.result.text(`${p2Val.name} wins`);
               winThrow = p2Choice;
               loseThrow = p1Choice;
+              winnerName = p2Val.name;
               break;
           }
 
-          if (playerMeRef) { // If I'm an active player, update my stats
-            if (winner === myPlayerID) {
-              playerMeRef.update({ wins: myWins + 1 });
-            } else if (winner) {
-              playerMeRef.update({ losses: myLosses + 1 });
-            }
+          JQ_IDs.result.text(winnerName ? `${winnerName} WINS!` : `TIE!`);
 
-            // TODO: figure out how to avoid this showing up 3x times
-            // JQ_IDs.chatText
-            // .prepend(`${winThrow} ${how} ${loseThrow} \n`);}
-          }
+          JQ_IDs.chatText
+            .prepend(`${winThrow} ${matchup.how} ${loseThrow}\n`);
+
+          setTimeout(function () {
+            if (playerMeRef) { // If I'm an active player, update my stats
+              if (winner === myPlayerID) {
+                ++myWins;
+                playerMeRef.update({ wins: myWins, choice: null}); // it's important to null out the choice, so that it will not fall back into this loop
+              } else if (winner) { // there was a winner (not a tie), but it wasn't me = loss
+                ++myLosses;
+                playerMeRef.update({ losses: myLosses, choice: null });
+              }
+            }
+            startNewGame();
+          }, 1000 * 3); // 3 seconds
+          console.log("HERE after timeout")
         }
-        // Timeout to next game
-        setTimeout(startNewGame, 1000 * 3); // 3 seconds
+        else {// Some player had an invalid choice, try a new game
+          // TODO: not working right
+          // console.log("Invalid choices, trying new game");
+          // setTimeout(startNewGame, 1000 * 2);
+        }
       }
     }
-
     else { // not in a match, players are joining
       if (numPlyrJoined === 2) {
         startNewMatch();
@@ -373,16 +455,13 @@ $(document).ready(function() {
     JQ_IDs.result.empty();
 
     JQ_CLASSes.myChoices.removeClass("locked");
-    JQ_CLASSes.choice.show();
-    JQ_CLASSes.choice.removeClass("active");
+    JQ_CLASSes.choice.removeClass("invisible active");
     myChoice = "";
-
 
     if (playerMeRef) {
       playerMeRef.update(
         {
           status: playerStatuses.thinking,
-          choice: null
         });
     }
   }
@@ -394,8 +473,7 @@ $(document).ready(function() {
       // let oppPlayerID = (myPlayerID % 2) + 1;
       // Show choices for my player # (1 or 2)
       JQ_CLASSes.myChoices.eq(myPlayerID - 1).removeClass("invisible");
-      // Show both players' stats (Wins/Losses)
-      JQ_CLASSes.pStats.removeClass("invisible");
+      // JQ_CLASSes.pStats.removeClass("invisible");
     }
 
     startNewGame();
