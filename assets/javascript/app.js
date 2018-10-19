@@ -1,5 +1,5 @@
 $(document).ready(function() {
-  console.log("READY");
+  // console.log("READY");
   
   let JQ_IDs = {
     joinForm   : null,
@@ -8,13 +8,13 @@ $(document).ready(function() {
     joinAlert  : null,
     joinResult : null,
 
-     p1Div    : null,
+    //  p1Div    : null,
      p1Name   : null,
      p1Status : null,
      p1Wins   : null,
      p1Losses : null,
 
-     p2Div    : null,
+    //  p2Div    : null,
      p2Name   : null,
      p2Status : null,
      p2Wins   : null,
@@ -31,7 +31,6 @@ $(document).ready(function() {
   for (let id of Object.keys(JQ_IDs)) {
     JQ_IDs[id] = $(`#${id}`);
   }
-  // console.log(JQ_IDs);
 
   let JQ_CLASSes = {
     myChoices: null,
@@ -41,29 +40,29 @@ $(document).ready(function() {
   for (let cl of Object.keys(JQ_CLASSes)) {
     JQ_CLASSes[cl] = $(`.${cl}`);
   }
-  // console.log(JQ_CLASSes);  
 
   const playerStatuses = {
-     waiting : "waiting for a challenger",
+     waiting : "waiting for a challenger!",
     thinking : "..thinking..",
      decided : "has decided",
        chose : "chose",
-        //  won : "is gloating",
-        // loss : "is defeated",
-        // tied : ""
   }
   
+  // #region Game Variables
   let nextPlayerID  = 0; // ID of next player to join (1 or 2)
-  let numPlyrJoined = 0;
-  let inAMatch = false;
+  let numPlyrJoined = 0; // Number of players that have joined game (limit 2)
+  let inAMatch = false;  //
+  // #endregion Game Variables
 
+  // #region (personal) Game Variables
   let myName     = "";
   let myPlayerID = 0 ;
   let myChoice   = "";
   let myWins     = 0 ;
   let myLosses   = 0 ;
+  // #endregion (personal) Game Variables
   
-  // #region Firebase Setup  
+  // #region Firebase Setup & References
   let db = loadFirebase();
   
   let   connectedRef = db.ref(".info/connected");
@@ -76,7 +75,7 @@ $(document).ready(function() {
   let    playerMeRef = null;
   // let   playerOppRef = null;
   // #endregion Firebase Setup
-  
+
  
   // #region Utility Functions
   const enumThrows = { ROCK: 0, PAPER: 1, SCISSORS: 2, LIZARD: 3, SPOCK: 4 };
@@ -88,7 +87,7 @@ $(document).ready(function() {
   }
   
   function setMatchUp(winThrow, beats, loseThrow) {
-    matchUps[winThrow ][loseThrow] = { winner: 1, how: beats, loser: 2 };  
+    matchUps[winThrow ][loseThrow] = { winner: 1, how: beats, loser: 2 };
     matchUps[loseThrow][winThrow ] = { winner: 2, how: beats, loser: 1 };
   }
 
@@ -105,14 +104,11 @@ $(document).ready(function() {
   setMatchUp(enumThrows.SPOCK   , "vaporizes"  , enumThrows.ROCK    );
   // #endregion Utility Functions
 
+
   // #region Click & Submit Functions
 
   // User Entered Name to Connect to Game
-  JQ_IDs.joinSubmit.click(function (event) {
-    JQ_IDs.joinForm.submit();
-  });
-
-  JQ_IDs.joinForm.submit(function (event) {
+  JQ_IDs.joinForm.submit(function(event) {
     event.preventDefault();
     JQ_IDs.joinAlert.empty();
 
@@ -133,10 +129,10 @@ $(document).ready(function() {
       }
       else {
         if (myName) {
-          namesRef.child(myName).set(null); // overwrite previous name
+          namesRef.child(myName).set(null); // force removal of previous name from firebase, if trying to overwrite
         }
 
-        // Make a new entry in the names list
+        // Make a new entry in the firebase names list
         let myNameRef = namesRef.child(name);
         myNameRef.set(true)
         myNameRef.onDisconnect().remove();
@@ -146,7 +142,7 @@ $(document).ready(function() {
   
         if (numPlyrJoined === 2) {
           JQ_IDs.joinResult.append(`Sorry ${name}, game is full. Please wait and chat.`);
-          return false;
+          return;
         }
   
         playerMeRef = playersRef.child(nextPlayerID);
@@ -159,21 +155,26 @@ $(document).ready(function() {
           losses: 0,
         }); 
 
-        return false;
+        return;
       }
     });
   });
 
   // User selected a RPSLS
   JQ_CLASSes.choice.click(function(event) {
-    // TODO: see if already locked
-    console.log("Clicking a choice");
-    JQ_CLASSes.myChoices.addClass("locked");
-    JQ_CLASSes.choice.addClass("invisible");
+    // TODO: see if already locked?
+    // console.log("Clicking a choice");
+
+    // DOM changes
+    JQ_CLASSes.myChoices.addClass("locked"   );
+    JQ_CLASSes.choice   .addClass("invisible");
     let $this = $(this);
     $this.removeClass("invisible").addClass("active");
+
+    // (personal) Game Variables 
     myChoice = $this.data("choice");
 
+    // Update status to firebase 
     playerMeRef.update({status: playerStatuses.decided});
   });
 
@@ -199,6 +200,7 @@ $(document).ready(function() {
   // #endregion Click Functions
 
   // #region Firebase Event Handlers
+
   connectedRef.on("value", function(dataSnap) {
     const val = dataSnap.val();
     // console.log("connected/value", val);
@@ -210,6 +212,8 @@ $(document).ready(function() {
     }
   });
 
+
+  // Update Player 1 State
   player1Ref.on("value", function (dataSnap) {
     const val = dataSnap.val();
     // console.log("player1/value", val);
@@ -218,7 +222,6 @@ $(document).ready(function() {
       JQ_IDs.p1Status.text("not joined");
       JQ_IDs.p1Wins  .text(0);
       JQ_IDs.p1Losses.text(0);
-      // JQ_IDs.p2Status.text(playerStatuses.waiting)
       return;
     }
 
@@ -226,72 +229,10 @@ $(document).ready(function() {
     JQ_IDs.p1Wins  .text(val.wins  );
     JQ_IDs.p1Losses.text(val.losses);
     JQ_IDs.p1Status.text(val.status);
-
-    if (dataSnap.child("choice").exists()) {
-      let choice = val.choice.toLowerCase();
-      console.log("choice", choice);
-      // let find = JQ_CLASSes.myChoices.eq(0).find(`[data-choice="${choice}"`);
-      let find = "";
-      console.log("cmon..", find);
-    }
-
-    //   if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
-    //     console.log("HERE after has property");
-    //     let p1Throw = enumThrows[p1Choice];
-    //     let p2Throw = enumThrows[p2Choice];
-
-    //     const matchup = matchUps[p1Throw][p2Throw];
-    //     const winner = matchup.winner;
-    //     let winThrow = null;
-    //     let loseThrow = null;
-    //     let winnerName = null;
-
-    //     switch (winner) {
-    //       case 0:
-    //         JQ_IDs.result.text("TIE!");
-    //         winThrow = p1Choice;
-    //         loseThrow = p2Choice;
-    //         winnerName = "";
-    //         break;
-    //       case 1:
-    //         winThrow = p1Choice;
-    //         loseThrow = p2Choice;
-    //         winnerName = p1Val.name;
-    //         break;
-    //       case 2:
-    //         winThrow = p2Choice;
-    //         loseThrow = p1Choice;
-    //         winnerName = p2Val.name;
-    //         break;
-    //     }
-
-    //     JQ_IDs.result.text(winnerName ? `${winnerName} WINS!` : `TIE!`);
-
-    //     JQ_IDs.chatText
-    //       .prepend(`${winThrow} ${matchup.how} ${loseThrow}\n`);
-
-    //     console.log("HERE before timeout");
-    //     setTimeout(function () {
-    //       console.log("HERE in timeout")
-    //       if (playerMeRef) { // If I'm an active player, update my stats
-    //         if (winner === myPlayerID) {
-    //           ++myWins;
-    //           playerMeRef.update({ wins: myWins, status: playerStatuses.won }); // it's important to set status to something so that it will not fall back into this loop
-    //         } else if (winner) { // there was a winner (not a tie), but it wasn't me = loss
-    //           ++myLosses;
-    //           playerMeRef.update({ losses: myLosses, status: playerStatuses.loss });
-    //         }
-    //         startNewGame();
-    //       }
-    //     }, 1000 * 3); // 3 seconds
-    //     console.log("HERE after timeout")
-    //   }
-    //   else {// Some player had an invalid choice, try a new game
-    //     // setTimeout(startNewGame, 1000 * 2);
-    //   }
-
   });
 
+
+  // Update Player 2 State
   player2Ref.on("value", function(dataSnap) {
     const val = dataSnap.val();
     // console.log("player2/value", val);
@@ -300,7 +241,6 @@ $(document).ready(function() {
       JQ_IDs.p2Status.text("not joined");
       JQ_IDs.p2Wins  .text(0);
       JQ_IDs.p2Losses.text(0);
-      // JQ_IDs.p1Status.text(playerStatuses.waiting);
       return;
     }
 
@@ -316,48 +256,42 @@ $(document).ready(function() {
   //   console.log("players/child_add", val, prevChildKey);
   // });
 
-  playersRef.on("child_removed", function(oldChildSnap) {
+  playersRef.on("child_removed", function (oldChildSnap) {
     // When a player disconnects in the middle of a game, do some resets
 
-    // --numPlyrJoined;
     // const val = oldChildSnap.val();
-    // console.log("players/child_removed", val);
-
-    inAMatch = false;
+    // console.log("players/child_removed", oldChildSnap.key, val, inAMatch);
 
     JQ_CLASSes.myChoices.removeClass("locked").addClass("invisible");
     JQ_CLASSes.choice.removeClass("invisible").removeClass("active");
 
-    player1Ref.once("value", function(dataSnap) {
-      if (dataSnap.val()){
-        player1Ref.update( {status: playerStatuses.waiting} );
-      }
-    });
-    player2Ref.once("value", function(dataSnap) {
-      if (dataSnap.val()){
-        player2Ref.update( {status: playerStatuses.waiting} );
-      }
-    });
-    // if (playersRef_opp.key === val.name) {
-    //   console.log("My opponent left");
-    // }
+    // If previously in middle of a match, then update the remaining player's status to be waiting
+    if (oldChildSnap.key === "1" && inAMatch) {
+      inAMatch = false;
+      player2Ref.update({ status: playerStatuses.waiting });
+    }
+    else if (oldChildSnap.key === "2" && inAMatch) {
+      inAMatch = false;
+      player1Ref.update({ status: playerStatuses.waiting });
+    }
   });
   
   playersRef.on("value", function (dataSnap) {
-    numPlyrJoined = dataSnap.numChildren();
+    // Update Game State Variables 
+    numPlyrJoined = dataSnap.numChildren(); // number of players in the game
+
+    let p1Child = dataSnap.child(1);
+    let p2Child = dataSnap.child(2);
+    nextPlayerID = (p1Child.exists() ? (p2Child.exists() ? 0 : 2) : 1); // what player slot is open
+
+
     const val = dataSnap.val();
     // console.log("players/value", val || null);
-    
-    let p1Snap = dataSnap.child(1);
-    let p2Snap = dataSnap.child(2);
-
-    nextPlayerID = (p1Snap.exists() ? (p2Snap.exists() ? 0 : 2) : 1);
-
     if (!val) { return; }
 
     if (inAMatch) {
-      let p1Val = p1Snap.val();
-      let p2Val = p2Snap.val();
+      let p1Val = p1Child.val();
+      let p2Val = p2Child.val();
 
       // Check if both players have decided their choice
       if (p1Val.status === playerStatuses.decided && p2Val.status === playerStatuses.decided) {
@@ -372,11 +306,12 @@ $(document).ready(function() {
       }
 
       // Check if both players have revealed their choice
-      if (p1Snap.child("choice").exists() && p2Snap.child("choice").exists()) {
+      if (p1Child.child("choice").exists() && p2Child.child("choice").exists()) {
         // See who's choice was the winner
         let p1Choice = p1Val.choice.toUpperCase();
         let p2Choice = p2Val.choice.toUpperCase();
 
+        // double check that the choices are 'valid' (are in the matchup array)
         if (enumThrows.hasOwnProperty(p1Choice) && enumThrows.hasOwnProperty(p2Choice)) {
           let p1Throw = enumThrows[p1Choice];
           let p2Throw = enumThrows[p2Choice];
@@ -387,59 +322,69 @@ $(document).ready(function() {
           let winThrow = null;
           let loseThrow = null;
           let winnerName = null;
-
           switch (winner) {
-            case 0:
-              winThrow  = p1Choice; // set these variables to still show a TIEd result
-              loseThrow = p2Choice;
+            case 0: // TIE
+              // set these variables even in a TIE result
+              winThrow   = p1Choice; 
+              loseThrow  = p2Choice;
               winnerName = "";
               break;
-            case 1:
-              winThrow = p1Choice;
-              loseThrow = p2Choice;
+            case 1: // Player 1 Won
+              winThrow   = p1Choice;
+              loseThrow  = p2Choice;
               winnerName = p1Val.name;
               break;
-            case 2:
-              winThrow = p2Choice;
-              loseThrow = p1Choice;
+            case 2: // Player 2 Won
+              winThrow   = p2Choice;
+              loseThrow  = p1Choice;
               winnerName = p2Val.name;
               break;
           }
 
+          // Show result DOM element
           JQ_IDs.result.text(winnerName ? `${winnerName} WINS!` : `TIE!`);
 
+          // Add message to chat for result
           JQ_IDs.chatText
             .prepend(`${winThrow} ${matchup.how} ${loseThrow}\n`);
-
-          setTimeout(function () {
-            if (playerMeRef) { // If I'm an active player, update my stats
+          
+          // Show on screen both Player 1 & 2's choice
+          JQ_CLASSes.choice.filter(`[data-choice="${p1Val.choice}"]`).eq(0).removeClass("invisible").addClass("visible");
+          JQ_CLASSes.choice.filter(`[data-choice="${p2Val.choice}"]`).eq(1).removeClass("invisible").addClass("visible");
+          
+          // Timeout before starting a new game
+          setTimeout(function() {
+            // If I'm an active player, update my stats & state
+            if (playerMeRef) { 
               if (winner === myPlayerID) {
                 ++myWins;
-                playerMeRef.update({ wins: myWins, choice: null}); // it's important to null out the choice, so that it will not fall back into this loop
+                playerMeRef.update({ wins: myWins, choice: null}); 
               } else if (winner) { // there was a winner (not a tie), but it wasn't me = loss
                 ++myLosses;
                 playerMeRef.update({ losses: myLosses, choice: null });
               }
+              else { // was a tie
+                playerMeRef.update( {choice: null} ); // it's important to still null out the choice, so not to fall back into this loop
+              }
             }
             startNewGame();
           }, 1000 * 3); // 3 seconds
-          console.log("HERE after timeout")
         }
-        else {// Some player had an invalid choice, try a new game
-          // TODO: not working right
-          // console.log("Invalid choices, trying new game");
-          // setTimeout(startNewGame, 1000 * 2);
+        else {
+          // Some player had an invalid choice, try a new game
+          console.log("Invalid choices, trying new game");
+          setTimeout(startNewGame, 1000 * 2);
         }
       }
     }
-    else { // not in a match, players are joining
+    else { // not yet in a match, players are joining
       if (numPlyrJoined === 2) {
         startNewMatch();
       }
     }
   });
 
-  // Only show chat since connecting
+  // Only show chat messages since connecting
   chatRef.once("value", function(dataSnap) {
     JQ_IDs.chatText.empty();
   });
@@ -450,30 +395,32 @@ $(document).ready(function() {
   });
   // #endregion Firebase Event Handlers
 
+
   // #region Game Functions
   function startNewGame() {
-    JQ_IDs.result.empty();
 
+    // Clear/Reset DOM elements
+    JQ_IDs.result.empty();
     JQ_CLASSes.myChoices.removeClass("locked");
-    JQ_CLASSes.choice.removeClass("invisible active");
+    JQ_CLASSes.choice.removeClass("visible invisible active");
+
+    // Clear/Reset Game Variables
     myChoice = "";
 
-    if (playerMeRef) {
-      playerMeRef.update(
-        {
-          status: playerStatuses.thinking,
-        });
+    // If I'm an active player, my start of a game status is 'thinking'
+    if (playerMeRef && inAMatch) { // need to dobule check for inAMatch in case a player disconnected in between revealing choices and starting a new game
+      playerMeRef.update({ status: playerStatuses.thinking });
     }
   }
 
   function startNewMatch() {
-    console.log("STARTING A MATCH");
+    // console.log("STARTING A MATCH");
     inAMatch = true;
+
+    // If I'm
     if (myPlayerID > 0) {
-      // let oppPlayerID = (myPlayerID % 2) + 1;
-      // Show choices for my player # (1 or 2)
+      // Show on screen choices for my player # (1 or 2)
       JQ_CLASSes.myChoices.eq(myPlayerID - 1).removeClass("invisible");
-      // JQ_CLASSes.pStats.removeClass("invisible");
     }
 
     startNewGame();
